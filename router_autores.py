@@ -1,35 +1,33 @@
-from fastapi import APIRouter, status
+from fastapi import APIRouter, status, HTTPException
+from sqlalchemy.orm import Session
 from database import engine
 import crud
-from models import Autor, AutorCreate, AutorUpdate
-from sqlmodel import Session
+from models import Autor
+from esquemas import AutorCreate, AutorUpdate, AutorRead
 
 router = APIRouter(prefix="/autores", tags=["Autores"])
 
-@router.post("/", response_model=Autor, status_code=status.HTTP_201_CREATED)
-def crear(new_autor: AutorCreate):
+@router.post("/", response_model=AutorRead, status_code=status.HTTP_201_CREATED)
+def crear_autor(data: AutorCreate):
     with Session(engine) as session:
-        return crud.crear_autor(session, new_autor)
+        return crud.crear_autor(session, data)
 
-
-@router.get("/{id_autor}", response_model=Autor)
-def obtener(id_autor: int):
+@router.get("/", response_model=list[AutorRead])
+def listar_autores(nacionalidad: str = None):
     with Session(engine) as session:
-        return crud.obtener_autor(session, id_autor)
+        return crud.listar_autores(session, nacionalidad)
 
-
-@router.patch("/{id_autor}", response_model=Autor)
-def actualizar(id_autor: int, datos: AutorUpdate):
+@router.get("/{autor_id}", response_model=AutorRead)
+def obtener_autor(autor_id: int):
     with Session(engine) as session:
-        return crud.actualizar_autor(session, id_autor, datos)
+        return crud.obtener_autor(session, autor_id)
 
-
-@router.delete("/{id_autor}", status_code=status.HTTP_204_NO_CONTENT)
-def eliminar(id_autor: int):
+@router.patch("/{autor_id}", response_model=AutorRead)
+def actualizar_autor(autor_id: int, data: AutorUpdate):
     with Session(engine) as session:
-        return crud.eliminar_autor(session, id_autor)
+        return crud.actualizar_autor(session, autor_id, data)
 
-@router.get("/{id_autor}/libros")
-def libros_de_autor(id_autor: int):
+@router.delete("/{autor_id}")
+def eliminar_autor(autor_id: int):
     with Session(engine) as session:
-        return crud.libros_de_autor(session, id_autor)
+        return crud.eliminar_autor(session, autor_id)
