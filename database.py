@@ -1,15 +1,23 @@
-from sqlmodel import SQLModel, create_engine, Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
+# ------------------------------
+# CONFIGURACIÓN DE LA BASE DE DATOS
+# ------------------------------
 
-DATABASE_URL = "sqlite:///biblioteca.db"
+# Crear el motor de base de datos SQLite
+engine = create_engine(
+    "sqlite:///biblioteca.db",  # El archivo SQLite se llamará biblioteca.db
+    echo=True,                  # Muestra en consola las consultas SQL ejecutadas
+    connect_args={"check_same_thread": False}  # Necesario para SQLite con threads
+)
 
-engine = create_engine(DATABASE_URL, echo=False)
+# Base declarativa para definir los modelos
+Base = declarative_base()
 
-def create_tables():
-    SQLModel.metadata.create_all(engine)
-
-def get_session():
-    with Session(engine) as session:
-        yield session
-
-SessionDep = Session
+# Crear la sesión de base de datos
+SessionLocal = sessionmaker(
+    bind=engine,
+    autoflush=False,
+    autocommit=False
+)
