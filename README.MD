@@ -1,0 +1,2 @@
+Este proyecto es una API REST desarrollada con FastAPI y SQLModel, diseñada para gestionar los autores y libros de una biblioteca.
+Permite registrar, consultar, actualizar y eliminar autores y libros, manteniendo la relación entre ellos de forma clara y estructurada.
