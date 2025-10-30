@@ -10,12 +10,21 @@ class LibroBase(BaseModel):
 class LibroCreate(LibroBase):
     pass
 
+class LibroUpdate(BaseModel):
+    titulo: Optional[str] = None
+    genero: Optional[str] = None
+    anio_publicacion: Optional[int] = None
+    autor_id: Optional[int] = None
+    isbn: Optional[str] = None
+    copias_disponibles: Optional[int] = None
+
 class LibroRead(LibroBase):
     id: int
     autor_id: Optional[int] = None
 
     class Config:
-        orm_mode = True
+        # Para Pydantic v2: reemplaza orm_mode por from_attributes
+        from_attributes = True
 
 
 # ---------- AUTOR ----------
@@ -27,9 +36,14 @@ class AutorBase(BaseModel):
 class AutorCreate(AutorBase):
     pass
 
+class AutorUpdate(BaseModel):
+    nombre: Optional[str] = None
+    nacionalidad: Optional[str] = None
+    edad: Optional[int] = None
+
 class AutorRead(AutorBase):
     id: int
     libros: List[LibroRead] = []
 
     class Config:
-        orm_mode = True
+        from_attributes = True

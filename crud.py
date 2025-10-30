@@ -4,12 +4,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import select
 
 from models import Autor, Libro
-from esquemas import (
-    AutorCreate,
-    AutorUpdate,
-    LibroCreate,
-    LibroUpdate
-)
+from esquemas import AutorCreate, AutorUpdate, LibroCreate, LibroUpdate
 
 
 # -------------------

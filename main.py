@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from database import create_tables
-from router.router_autores import router as router_autores
-from router.router_libros import router as router_libros
+from router_autores import router as router_autores
+from router_libros import router as router_libros
 
 app = FastAPI(title="Sistema de Biblioteca")
 
