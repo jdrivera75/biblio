@@ -1,46 +1,35 @@
-from typing import List, Optional
-from fastapi import APIRouter, Depends, status
-from sqlalchemy.orm import Session
-
-from database import get_session
-from crud import (
-    crear_autor,
-    listar_autores,
-    obtener_autor,
-    actualizar_autor,
-    eliminar_autor,
-    libros_por_autor
-)
-from esquemas import AutorCreate, AutorUpdate, AutorRead, LibroRead
+from fastapi import APIRouter, status
+from database import engine
+import crud
+from models import Autor, AutorCreate, AutorUpdate
+from sqlmodel import Session
 
 router = APIRouter(prefix="/autores", tags=["Autores"])
 
-
-@router.post("/", response_model=AutorRead, status_code=status.HTTP_201_CREATED)
-def api_crear_autor(data: AutorCreate, db: Session = Depends(get_session)):
-    return crear_autor(db, data)
-
-
-@router.get("/", response_model=List[AutorRead])
-def api_listar_autores(nacionalidad: Optional[str] = None, db: Session = Depends(get_session)):
-    return listar_autores(db, nacionalidad)
+@router.post("/", response_model=Autor, status_code=status.HTTP_201_CREATED)
+def crear(new_autor: AutorCreate):
+    with Session(engine) as session:
+        return crud.crear_autor(session, new_autor)
 
 
-@router.get("/{autor_id}", response_model=AutorRead)
-def api_obtener_autor(autor_id: int, db: Session = Depends(get_session)):
-    return obtener_autor(db, autor_id)
+@router.get("/{id_autor}", response_model=Autor)
+def obtener(id_autor: int):
+    with Session(engine) as session:
+        return crud.obtener_autor(session, id_autor)
 
 
-@router.put("/{autor_id}", response_model=AutorRead)
-def api_actualizar_autor(autor_id: int, data: AutorUpdate, db: Session = Depends(get_session)):
-    return actualizar_autor(db, autor_id, data)
+@router.patch("/{id_autor}", response_model=Autor)
+def actualizar(id_autor: int, datos: AutorUpdate):
+    with Session(engine) as session:
+        return crud.actualizar_autor(session, id_autor, datos)
 
 
-@router.delete("/{autor_id}", status_code=status.HTTP_200_OK)
-def api_eliminar_autor(autor_id: int, db: Session = Depends(get_session)):
-    return eliminar_autor(db, autor_id)
+@router.delete("/{id_autor}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar(id_autor: int):
+    with Session(engine) as session:
+        return crud.eliminar_autor(session, id_autor)
 
-
-@router.get("/{autor_id}/libros", response_model=List[LibroRead])
-def api_libros_por_autor(autor_id: int, db: Session = Depends(get_session)):
-    return libros_por_autor(db, autor_id)
+@router.get("/{id_autor}/libros")
+def libros_de_autor(id_autor: int):
+    with Session(engine) as session:
+        return crud.libros_de_autor(session, id_autor)

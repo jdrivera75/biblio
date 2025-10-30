@@ -1,95 +1,50 @@
-from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
-
-from database import get_session
+from fastapi import APIRouter, status, HTTPException
+from sqlalchemy.orm import Session  # CORREGIDO: usar SQLAlchemy
+from database import engine
+import crud
 from models import Libro, Autor
-from esquemas import LibroCreate, LibroRead, LibroUpdate  # o esquemas import según cómo lo nombraste
+from esquemas import LibroCreate, LibroUpdate, LibroRead, AutorRead
 
 router = APIRouter(prefix="/libros", tags=["Libros"])
 
-
 @router.post("/", response_model=LibroRead, status_code=status.HTTP_201_CREATED)
-def crear_libro(data: LibroCreate, db: Session = Depends(get_session)):
-    # Verificar que exista el autor indicado (si se envía autor_id)
-    if data.autor_id is not None:
-        autor = db.query(Autor).get(data.autor_id)
-        if not autor:
-            raise HTTPException(status_code=404, detail="Autor no encontrado")
+def crear(new_libro: LibroCreate):
+    with Session(engine) as session:
+        return crud.crear_libro(session, new_libro)
 
-    libro = Libro(
-        titulo=data.titulo,
-        genero=data.genero,
-        anio_publicacion=data.anio_publicacion,
-        autor_id=data.autor_id
-    )
-    db.add(libro)
-    db.commit()
-    db.refresh(libro)
-    return libro
-
-
-@router.get("/", response_model=List[LibroRead])
-def listar_libros(genero: Optional[str] = None, anio: Optional[int] = None, db: Session = Depends(get_session)):
-    query = db.query(Libro)
-    if genero is not None:
-        query = query.filter(Libro.genero == genero)
-    if anio is not None:
-        query = query.filter(Libro.anio_publicacion == anio)
-
-    libros = query.all()
-    if not libros:
-        raise HTTPException(status_code=404, detail="No se encontraron libros con esos filtros")
-    return libros
-
+@router.get("/", response_model=list[LibroRead])
+def listar():
+    with Session(engine) as session:
+        return crud.listar_libros(session)
 
 @router.get("/{libro_id}", response_model=LibroRead)
-def obtener_libro(libro_id: int, db: Session = Depends(get_session)):
-    libro = db.query(Libro).get(libro_id)
-    if not libro:
-        raise HTTPException(status_code=404, detail="Libro no encontrado")
-    return libro
+def obtener(libro_id: int):
+    with Session(engine) as session:
+        libro = crud.obtener_libro(session, libro_id)
+        if not libro:
+            raise HTTPException(status_code=404, detail="Libro no encontrado")
+        return libro
 
-
-@router.put("/{libro_id}", response_model=LibroRead)
-def actualizar_libro(libro_id: int, data: LibroUpdate, db: Session = Depends(get_session)):
-    libro = db.query(Libro).get(libro_id)
-    if not libro:
-        raise HTTPException(status_code=404, detail="Libro no encontrado")
-
-    # Si se cambia el autor, validar que exista
-    if data.autor_id is not None and data.autor_id != libro.autor_id:
-        autor = db.query(Autor).get(data.autor_id)
-        if not autor:
-            raise HTTPException(status_code=404, detail="Autor nuevo no encontrado")
-
-    for campo, valor in data.dict(exclude_unset=True).items():
-        setattr(libro, campo, valor)
-
-    db.add(libro)
-    db.commit()
-    db.refresh(libro)
-    return libro
-
+@router.patch("/{libro_id}", response_model=LibroRead)
+def actualizar(libro_id: int, datos: LibroUpdate):
+    with Session(engine) as session:
+        libro = crud.actualizar_libro(session, libro_id, datos)
+        if not libro:
+            raise HTTPException(status_code=404, detail="Libro no encontrado")
+        return libro
 
 @router.delete("/{libro_id}")
-def eliminar_libro(libro_id: int, db: Session = Depends(get_session)):
-    libro = db.query(Libro).get(libro_id)
-    if not libro:
-        raise HTTPException(status_code=404, detail="Libro no encontrado")
+def eliminar(libro_id: int):
+    with Session(engine) as session:
+        exito = crud.eliminar_libro(session, libro_id)
+        if not exito:
+            raise HTTPException(status_code=404, detail="Libro no encontrado")
+        return {"message": "Libro eliminado correctamente"}
 
-    db.delete(libro)
-    db.commit()
-    return {"mensaje": "Libro eliminado correctamente"}
-
-
-@router.get("/autor/{autor_id}", response_model=List[LibroRead])
-def libros_por_autor(autor_id: int, db: Session = Depends(get_session)):
-    autor = db.query(Autor).get(autor_id)
-    if not autor:
-        raise HTTPException(status_code=404, detail="Autor no encontrado")
-
-    libros = db.query(Libro).filter(Libro.autor_id == autor_id).all()
-    if not libros:
-        raise HTTPException(status_code=404, detail="Este autor no tiene libros registrados")
-    return libros
+@router.get("/{libro_id}/autor", response_model=AutorRead)
+def autor_del_libro(libro_id: int):
+    with Session(engine) as session:
+        autor = crud.obtener_libro(session, libro_id).autor
+        if not autor:
+            raise HTTPException(status_code=404, detail="Autor no encontrado")
+        return autor
